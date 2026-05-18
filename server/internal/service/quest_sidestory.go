@@ -101,6 +101,9 @@ func (s *SideStoryQuestServiceServer) MoveSideStoryQuestProgress(ctx context.Con
 			scene, ok = info.SceneIdByType(model.SideStorySceneIntroduction)
 		} else {
 			scene, ok = sideStoryNextSceneAfterBattle(info, user)
+			if !ok {
+				scene, ok = existing.HeadSideStoryQuestSceneId, true
+			}
 		}
 		if !ok {
 			return
