@@ -185,8 +185,8 @@ func (h *QuestHandler) menuPickSceneId(questId int32, isBattleOnly bool) int32 {
 
 func (h *QuestHandler) applyQuestVictory(user *store.UserState, questId int32, outcome *FinishOutcome, nowMillis int64, wasReplay bool) {
 	questState := user.Quests[questId]
+	h.applyExpAndGoldRewards(user, questId, nowMillis)
 	if !questState.IsRewardGranted {
-		h.applyExpAndGoldRewards(user, questId, nowMillis)
 		if !wasReplay {
 			h.applyFirstClearItemRewards(user, questId, nowMillis)
 			outcome.ChangedWeaponStoryIds = append(outcome.ChangedWeaponStoryIds,

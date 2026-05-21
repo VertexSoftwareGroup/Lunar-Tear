@@ -3,7 +3,6 @@ package masterdata
 import (
 	"fmt"
 	"log"
-	"slices"
 	"sort"
 
 	"lunar-tear/server/internal/model"
@@ -126,27 +125,16 @@ func LoadGachaPool() (*GachaCatalog, error) {
 	}
 
 	catalogCostumeSet := make(map[int32]bool, len(catalogCostumes))
-	costumeTermId := make(map[int32]int32, len(catalogCostumes))
 	for _, c := range catalogCostumes {
 		catalogCostumeSet[c.CostumeId] = true
-		costumeTermId[c.CostumeId] = c.CatalogTermId
 	}
 	catalogWeaponSet := make(map[int32]bool, len(catalogWeapons))
 	for _, w := range catalogWeapons {
 		catalogWeaponSet[w.WeaponId] = true
 	}
 
-	costumeWeaponType := make(map[int32]int32, len(costumes))
-	for _, c := range costumes {
-		costumeWeaponType[c.CostumeId] = c.SkillfulWeaponType
-	}
-
-	weaponTypeById := make(map[int32]int32, len(weapons))
-	weaponRarityById := make(map[int32]int32, len(weapons))
 	restrictedWeapons := make(map[int32]bool)
 	for _, w := range weapons {
-		weaponTypeById[w.WeaponId] = w.WeaponType
-		weaponRarityById[w.WeaponId] = w.RarityType
 		if w.IsRestrictDiscard {
 			restrictedWeapons[w.WeaponId] = true
 		}
@@ -262,60 +250,12 @@ func LoadGachaPool() (*GachaCatalog, error) {
 	log.Printf("[GachaPool] pool excludes %d evolved, %d quest-granted costumes, %d quest-granted weapons, %d restricted weapons",
 		evolvedFilteredCount, questGrantedCostumeCount, questGrantedWeaponCount, restrictedCount)
 
-	type weaponKey struct {
-		TermId     int32
-		WeaponType int32
-		Rarity     int32
-	}
-	weaponsByKey := make(map[weaponKey][]int32)
-	for _, cw := range catalogWeapons {
-		if evolvedWeapons[cw.WeaponId] || restrictedWeapons[cw.WeaponId] {
-			continue
-		}
-		wt := weaponTypeById[cw.WeaponId]
-		r := weaponRarityById[cw.WeaponId]
-		if wt == 0 || r < model.RaritySRare {
-			continue
-		}
-		k := weaponKey{TermId: cw.CatalogTermId, WeaponType: wt, Rarity: r}
-		weaponsByKey[k] = append(weaponsByKey[k], cw.WeaponId)
-	}
-	for k, ids := range weaponsByKey {
-		slices.Sort(ids)
-		weaponsByKey[k] = ids
-	}
-
-	exact, pattern, bestGuess := 0, 0, 0
-	for costumeId, item := range pool.CostumeById {
-		tid := costumeTermId[costumeId]
-		wt := costumeWeaponType[costumeId]
-		k := weaponKey{TermId: tid, WeaponType: wt, Rarity: item.RarityType}
-		candidates := weaponsByKey[k]
-		if len(candidates) == 0 {
-			continue
-		}
-		if len(candidates) == 1 {
-			pool.CostumeWeaponMap[costumeId] = candidates[0]
-			exact++
-			continue
-		}
-		idPattern := costumeId*10 + 1
-		found := false
-		for _, wid := range candidates {
-			if wid == idPattern {
-				pool.CostumeWeaponMap[costumeId] = wid
-				pattern++
-				found = true
-				break
-			}
-		}
-		if !found {
-			pool.CostumeWeaponMap[costumeId] = candidates[0]
-			bestGuess++
+	for costumeId := range pool.CostumeById {
+		if wid, ok := costumeWeaponPairings[costumeId]; ok {
+			pool.CostumeWeaponMap[costumeId] = wid
 		}
 	}
-	log.Printf("[GachaPool] costume-weapon pairing: %d exact, %d id-pattern, %d best-guess, %d total",
-		exact, pattern, bestGuess, len(pool.CostumeWeaponMap))
+	log.Printf("[GachaPool] costume-weapon pairing: %d entries from lookup table", len(pool.CostumeWeaponMap))
 
 	for _, m := range materials {
 		pool.Materials = append(pool.Materials, GachaPoolItem{
@@ -330,7 +270,6 @@ func LoadGachaPool() (*GachaCatalog, error) {
 
 func (pool *GachaCatalog) BuildShopFeatured(shop *ShopCatalog) {
 	pool.ShopFeaturedByMedal = make(map[int32][]ShopFeaturedEntry)
-	shopPairs := 0
 	for _, cells := range shop.ExchangeShopCells {
 		consumableId := shop.Items[cells[0].ShopItemId].PriceId
 
@@ -350,16 +289,12 @@ func (pool *GachaCatalog) BuildShopFeatured(shop *ShopCatalog) {
 				continue
 			}
 			entries = append(entries, ShopFeaturedEntry{CostumeId: costumeId, WeaponId: weaponId})
-			if costumeId != 0 && weaponId != 0 {
-				pool.CostumeWeaponMap[costumeId] = weaponId
-				shopPairs++
-			}
 		}
 		if len(entries) > 0 {
 			pool.ShopFeaturedByMedal[consumableId] = entries
 		}
 	}
-	log.Printf("[GachaPool] shop featured: %d consumables, %d costume-weapon pairs overridden", len(pool.ShopFeaturedByMedal), shopPairs)
+	log.Printf("[GachaPool] shop featured: %d consumables", len(pool.ShopFeaturedByMedal))
 }
 
 func (pool *GachaCatalog) PruneUnpairedCostumes() {
