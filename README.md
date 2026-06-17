@@ -370,6 +370,10 @@ This only sets the nickname of Auth Server account, a player can choose their in
 
 **Use at your own risk.** The author assumes no liability for any damages or legal consequences that may arise from using this software. By using or contributing to this project, you are solely responsible for ensuring your usage complies with all applicable laws in your jurisdiction.
 
+<p align="center">
+  <img src="https://firesanctuary.com/blog/wp-content/uploads/2021/04/rein28art-01.jpeg" alt="Banner Logo" width="817">
+</p>
+
 This project is released under the [MIT License](LICENSE).
 
 **If you are a rights holder with concerns regarding this project**, please contact me directly.
