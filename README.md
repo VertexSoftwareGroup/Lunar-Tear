@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://gameinformer.com/sites/default/files/styles/content_header_l/public/2024/01/24/de57b9c0/nier_reincarnation_art.jpg.webp" alt="Server Logo" width="821">
+</p>
+
 # Lunar Tear
 
 Our mirror and playground for the Lunar Tear NieR: Reincarnation preservation project.
