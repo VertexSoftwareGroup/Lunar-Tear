@@ -1,7 +1,6 @@
 # Lunar Tear
 
-Private server research project for a certain discontinued mobile game.
-Discord server: https://discord.gg/MZAf5aVkJG
+Our mirror and playground for the Lunar Tear NieR: Reincarnation preservation project.
 
 ## How To Launch The Server
 
